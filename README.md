@@ -3,7 +3,7 @@
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/cybozu-go/neco-template?tab=overview)](https://pkg.go.dev/github.com/cybozu-go/neco-template?tab=overview)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cybozu-go/neco-template)](https://goreportcard.com/report/github.com/cybozu-go/neco-template)
 
-Template repository for Neco
+ofen
 ============================
 
 **Project Status**: Initial development
