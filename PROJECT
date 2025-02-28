@@ -1,0 +1,6 @@
+domain: ofen.cybozu.io
+layout:
+- go.kubebuilder.io/v4
+projectName: ofen
+repo: github.com/cybozu-go/ofen
+version: "3"
