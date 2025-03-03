@@ -1,0 +1,9 @@
+apiVersion: ofen.cybozu.io/v1
+kind: NodeImageSet
+metadata:
+  labels:
+    app.kubernetes.io/name: ofen
+    app.kubernetes.io/managed-by: kustomize
+  name: nodeimageset-sample
+spec:
+  # TODO(user): Add fields here
