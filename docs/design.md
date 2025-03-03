@@ -29,7 +29,7 @@ This section describes user stories.
 - Assume that the Kubernetes cluster in the user stories is operated in an on-premises environment.
   - The team managing the Kubernetes cluster is referred to as the cluster administrators.
   - The team using the Kubernetes cluster is referred to as the tenant team.
-  - Container images are downloaded from an external container registry over the internet.
+  - Container images are downloaded from a upstream registry over the internet.
   - There is sufficient bandwidth from the cluster to the internet, but network throttling may occur if the network load becomes too high.
 
 ### User Story 1
@@ -48,6 +48,10 @@ The tenant team wants to pre-download images to minimize downtime during workloa
 ### Limitations
 
 - These features assume that [spegel](https://github.com/spegel-org/spegel) is running within the cluster.
+- Images downloaded by the operator are persisted in the node's local storage.
+As a result, any pod scheduled to the node can utilize these images without requiring image pull operations or valid registry credentials.
+This behavior may present security concerns in multi-tenant environments where private images are utilized, as it could potentially allow unauthorized access to container images containing confidential information.
+If this specification is not acceptable, please consider deploying admission webhooks such as [AlwaysPullImages](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#alwayspullimages) to enforce proper authentication for all image access operations.
 
 ### Risk and Mitigation
 
@@ -107,7 +111,7 @@ subgraph Node1
   spegel-pod1[Spegel Pod]
 end
 
-subgraph external
+subgraph upstream
   container-registry[Container Registry]
 end
 
@@ -130,9 +134,9 @@ end
 
 
 %% Node1
-image-puller1-->|A1: Request to download container images from the registry mirror and external registry|containerd-node1
+image-puller1-->|A1: Request to download container images from the registry mirror and upstream registry|containerd-node1
 containerd-node1-->|A2: Attempt to download images from the registry mirror|spegel-pod1
-containerd-node1-->|A3: Attempt to download images from the external registry|container-registry
+containerd-node1-->|A3: Attempt to download images from the upstream registry|container-registry
 
 %% Node2
 image-puller2-->|B1: Request to download container images from the registry mirror|containerd-node2
