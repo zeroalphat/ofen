@@ -57,9 +57,9 @@ type ImagePrefetchStatus struct {
 }
 
 const (
-	ConditionReady               = "Ready"
-	ConditionProgressing         = "Progressing"
-	ConditionImageDownloadFailed = "ImageDownloadFailed"
+	ConditionReady           = "Ready"
+	ConditionProgressing     = "Progressing"
+	ConditionImagePullFailed = "ImagePullFailed"
 )
 
 // +kubebuilder:object:root=true

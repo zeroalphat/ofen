@@ -13,4 +13,12 @@ resources:
   kind: ImagePrefetch
   path: github.com/cybozu-go/ofen/api/v1
   version: v1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: cybozu.io
+  group: ofen
+  kind: NodeImageSet
+  path: github.com/cybozu-go/ofen/api/v1
+  version: v1
 version: "3"
