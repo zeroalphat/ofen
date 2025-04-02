@@ -19,6 +19,7 @@ import (
 
 	ofenv1 "github.com/cybozu-go/ofen/api/v1"
 	"github.com/cybozu-go/ofen/internal/controller"
+	webhookofenv1 "github.com/cybozu-go/ofen/internal/webhook/v1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -141,7 +142,7 @@ func main() {
 		os.Exit(1)
 	}
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&ofenv1.ImagePrefetch{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookofenv1.SetupImagePrefetchWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "ImagePrefetch")
 			os.Exit(1)
 		}
