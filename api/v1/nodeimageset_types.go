@@ -7,8 +7,11 @@ import (
 
 // NodeImageSetSpec defines the desired state of NodeImageSet
 type NodeImageSetSpec struct {
-	// ImageSet is a list of image sets to be downloaded.
-	ImageSet []ImageSet `json:"imageSet"`
+	// Images is a list of container images to be downloaded.
+	Images []string `json:"images"`
+
+	// Registry Policy is the policy for downloading images from the registry.
+	RegistryPolicy RegistryPolicy `json:"registryPolicy"`
 
 	// NodeName is the name of the node where the image is downloaded.
 	NodeName string `json:"nodeName"`
@@ -21,14 +24,6 @@ type NodeImageSetSpec struct {
 	// +optional
 	// +kubebuilder:default:=3
 	ImageDownloadRetryLimit int32 `json:"imageDownloadRetryLimit,omitempty"`
-}
-
-type ImageSet struct {
-	// image is the name of the image.
-	Image string `json:"image"`
-
-	// Registry Policy is the policy for downloading images from the registry.
-	RegistryPolicy RegistryPolicy `json:"registryPolicy"`
 }
 
 type RegistryPolicy string
@@ -45,6 +40,11 @@ const (
 
 // NodeImageSetStatus defines the observed state of NodeImageSet
 type NodeImageSetStatus struct {
+	// ImagePrefetchGeneration is the generation of the image prefetch resource.
+	// It is used to track the status of the image prefetch resource.
+	// +optional
+	ImagePrefetchGeneration int64 `json:"imagePrefetchGeneration,omitempty"`
+
 	// The generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -80,6 +80,8 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
+// +genclient
+// +genclient:nonNamespaced
 
 // NodeImageSet is the Schema for the nodeimagesets API
 type NodeImageSet struct {
