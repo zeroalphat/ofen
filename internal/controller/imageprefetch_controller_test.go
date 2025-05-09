@@ -56,7 +56,9 @@ func prepareObjects(ctx context.Context) error {
 		_, err := ctrl.CreateOrUpdate(ctx, k8sClient, node, func() error {
 			return nil
 		})
-		Expect(err).NotTo(HaveOccurred())
+		if err != nil {
+			return err
+		}
 	}
 
 	// create 3 nodes with labels
@@ -83,7 +85,10 @@ func prepareObjects(ctx context.Context) error {
 		_, err := ctrl.CreateOrUpdate(ctx, k8sClient, node, func() error {
 			return nil
 		})
-		Expect(err).NotTo(HaveOccurred())
+		if err != nil {
+			return err
+		}
+
 	}
 
 	return nil
@@ -211,7 +216,7 @@ var _ = Describe("ImagePrefetch Controller", func() {
 					}),
 				})
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(len(nodeImageSets.Items)).To(Equal(replicas))
+				g.Expect(nodeImageSets.Items).To(HaveLen(replicas))
 				nodeList := []string{}
 				for _, nodeImageSet := range nodeImageSets.Items {
 					g.Expect(nodeImageSet.Spec.Images).Should(ConsistOf(testImagesList))
@@ -263,7 +268,7 @@ var _ = Describe("ImagePrefetch Controller", func() {
 					}),
 				})
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(len(nodeImageSets.Items)).To(Equal(3))
+				g.Expect(nodeImageSets.Items).To(HaveLen(3))
 			}).Should(Succeed())
 
 			By("cleaning up the ImagePrefetch resource")
@@ -289,7 +294,7 @@ var _ = Describe("ImagePrefetch Controller", func() {
 					}),
 				})
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(len(nodeImageSets.Items)).To(Equal(7))
+				g.Expect(nodeImageSets.Items).To(HaveLen(7))
 			}).Should(Succeed())
 
 			By("cleaning up the ImagePrefetch resource")
@@ -330,7 +335,7 @@ var _ = Describe("ImagePrefetch Controller", func() {
 					}),
 				})
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(nodeImageSets.Items).To(HaveLen(0))
+				g.Expect(nodeImageSets.Items).To(BeEmpty())
 			}).Should(Succeed())
 		})
 
@@ -703,7 +708,7 @@ var _ = Describe("ImagePrefetch Controller", func() {
 					}),
 				})
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(len(nodeImageSets.Items)).To(Equal(3))
+				g.Expect(nodeImageSets.Items).To(HaveLen(3))
 			}).Should(Succeed())
 
 			By("adding a new node")
@@ -767,7 +772,7 @@ var _ = Describe("ImagePrefetch Controller", func() {
 					}),
 				})
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(len(nodeImageSets.Items)).To(Equal(2))
+				g.Expect(nodeImageSets.Items).To(HaveLen(2))
 			}).Should(Succeed())
 
 			By("updating a node to NotReady")
@@ -800,7 +805,7 @@ var _ = Describe("ImagePrefetch Controller", func() {
 					}),
 				})
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(len(nodeImageSets.Items)).To(Equal(2))
+				g.Expect(nodeImageSets.Items).To(HaveLen(2))
 				for _, nodeImageSet := range nodeImageSets.Items {
 					g.Expect(nodeImageSet.Spec.NodeName).NotTo(Equal(nodeName))
 				}
@@ -872,7 +877,7 @@ var _ = Describe("ImagePrefetch Controller", func() {
 	})
 })
 
-func createNewNode(ctx context.Context, name, zoneName string) string {
+func createNewNode(ctx context.Context, name, zoneName string) {
 	node := &corev1.Node{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -894,7 +899,6 @@ func createNewNode(ctx context.Context, name, zoneName string) string {
 	}
 	err := k8sClient.Create(ctx, node)
 	Expect(err).NotTo(HaveOccurred())
-	return name
 }
 
 func createNamespace(ctx context.Context, name string) {
@@ -959,9 +963,10 @@ func updateNodeImage(ctx context.Context, nodeName string, images []string) {
 func countRegistryPolicy(nodeImageSets *ofenv1.NodeImageSetList) (int, int) {
 	defaultPolicy, mirrorOnly := 0, 0
 	for _, nodeImageSet := range nodeImageSets.Items {
-		if nodeImageSet.Spec.RegistryPolicy == ofenv1.RegistryPolicyMirrorOnly {
+		switch nodeImageSet.Spec.RegistryPolicy {
+		case ofenv1.RegistryPolicyMirrorOnly:
 			mirrorOnly++
-		} else if nodeImageSet.Spec.RegistryPolicy == ofenv1.RegistryPolicyDefault {
+		case ofenv1.RegistryPolicyDefault:
 			defaultPolicy++
 		}
 	}
