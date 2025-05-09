@@ -57,17 +57,17 @@ type NodeImageSetStatus struct {
 
 	// DesiredImages is the number of images that need to be downloaded.
 	// +optional
-	//+kubebuilder:default:=0
+	// +kubebuilder:default:=0
 	DesiredImages int `json:"desiredImages,omitempty"`
 
 	// AvailableImages is the number of images that have completed downloading.
 	// +optional
-	//+kubebuilder:default:=0
+	// +kubebuilder:default:=0
 	AvailableImages int `json:"availableImages,omitempty"`
 
 	// DownloadFailedImages is the number of images that failed to download.
 	// +optional
-	//+kubebuilder:default:=0
+	// +kubebuilder:default:=0
 	DownloadFailedImages int `json:"downloadFailedImages,omitempty"`
 }
 

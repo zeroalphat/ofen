@@ -136,9 +136,9 @@ func (r *ImagePrefetchReconciler) selectTargetNodes(ctx context.Context, imgPref
 	}
 
 	if imgPrefetch.Spec.Replicas > 0 {
-		needsNodeSelection := isNeedNodeSelection(ctx, imgPrefetch, readyNodes)
+		needsNodeSelection := isNeedNodeSelection(imgPrefetch, readyNodes)
 		if needsNodeSelection {
-			nodes, err := selectNodesByReplicas(ctx, imgPrefetch, readyNodes)
+			nodes, err := selectNodesByReplicas(imgPrefetch, readyNodes)
 			if err != nil {
 				return nil, fmt.Errorf("failed to select nodes by replicas: %w", err)
 			}
@@ -163,7 +163,7 @@ func filterReadyNodes(nodes []corev1.Node) []corev1.Node {
 	return readyNodes
 }
 
-func isNeedNodeSelection(ctx context.Context, imgPrefetch *ofenv1.ImagePrefetch, readyNodes []corev1.Node) bool {
+func isNeedNodeSelection(imgPrefetch *ofenv1.ImagePrefetch, readyNodes []corev1.Node) bool {
 	if len(imgPrefetch.Status.SelectedNodes) == 0 {
 		return true
 	}
@@ -193,7 +193,7 @@ func getNodeNames(nodes []corev1.Node) []string {
 	return nodeNames
 }
 
-func selectNodesByReplicas(ctx context.Context, imgPrefetch *ofenv1.ImagePrefetch, readyNodes []corev1.Node) ([]string, error) {
+func selectNodesByReplicas(imgPrefetch *ofenv1.ImagePrefetch, readyNodes []corev1.Node) ([]string, error) {
 	var selectNodes []string
 	targetReplicas := imgPrefetch.Spec.Replicas
 
@@ -237,7 +237,10 @@ func (r *ImagePrefetchReconciler) createOrUpdateNodeImageSet(ctx context.Context
 	selectNodes := map[string]struct{}{}
 	for i, nodeName := range selectedNodes {
 		selectNodes[nodeName] = struct{}{}
-		nodeImageSetName := getNodeImageSetName(imgPrefetch, nodeName)
+		nodeImageSetName, err := getNodeImageSetName(imgPrefetch, nodeName)
+		if err != nil {
+			return fmt.Errorf("failed to get NodeImageSet name: %w", err)
+		}
 
 		registryPolicy := ofenv1.RegistryPolicyMirrorOnly
 		if i < r.ImagePullNodeLimit {
@@ -351,13 +354,15 @@ func labelSet(imgPrefetch *ofenv1.ImagePrefetch, nodeName string) map[string]str
 	}
 }
 
-func getNodeImageSetName(imgPrefetch *ofenv1.ImagePrefetch, nodeName string) string {
+func getNodeImageSetName(imgPrefetch *ofenv1.ImagePrefetch, nodeName string) (string, error) {
 	name := imgPrefetch.Name
 	namespace := imgPrefetch.Namespace
-	sha1 := sha1.New()
-	io.WriteString(sha1, name+"\000"+namespace+"\000"+nodeName)
-	hash := hex.EncodeToString(sha1.Sum(nil))
-	return fmt.Sprintf("%s-%s-%s", constants.NodeImageSetPrefix, name, hash[:8])
+	hasher := sha1.New()
+	if _, err := io.WriteString(hasher, name+"\000"+namespace+"\000"+nodeName); err != nil {
+		return "", fmt.Errorf("failed to write string to sha1: %w", err)
+	}
+	hash := hex.EncodeToString(hasher.Sum(nil))
+	return fmt.Sprintf("%s-%s-%s", constants.NodeImageSetPrefix, name, hash[:8]), nil
 }
 
 func (r *ImagePrefetchReconciler) updateStatus(ctx context.Context, imgPrefetch *ofenv1.ImagePrefetch, selectedNodes []string) (ctrl.Result, error) {
