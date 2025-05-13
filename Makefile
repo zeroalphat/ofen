@@ -1,4 +1,4 @@
-IMG ?= image-prefetch:dev
+include ./Makefile.common
 ENVTEST_K8S_VERSION = 1.31.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -71,7 +71,8 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 
 .PHONY: build
 build: manifests generate fmt vet k8s-client-gen ## Build manager binary.
-	go build -o bin/manager cmd/main.go
+	go build -o bin/imageprefetch-controller cmd/imageprefetch-controller/main.go
+	go build -o bin/nodeimageset-controller cmd/nodeimageset-controller/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -79,11 +80,13 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	$(CONTAINER_TOOL) build -t ${IMG} .
+	$(CONTAINER_TOOL) build -t ${IMG_PREFETCH_CONTROLLER} -f ./dockerfiles/Dockerfile.imageprefetch-controller .
+	$(CONTAINER_TOOL) build -t $(IMG_NODEIMAGESET_CONTROLLER) -f ./dockerfiles/Dockerfile.nodeimageset-controller .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
-	$(CONTAINER_TOOL) push ${IMG}
+	$(CONTAINER_TOOL) push ${IMG_PREFETCH_CONTROLLER}
+	$(CONTAINER_TOOL) push ${IMG_NODEIMAGESET_CONTROLLER}
 
 .PHONY: build-installer
 build-installer: manifests generate kustomize ## Generate a consolidated YAML with CRDs and deployment.

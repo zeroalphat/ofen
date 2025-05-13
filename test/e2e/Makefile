@@ -1,3 +1,4 @@
+include ../../Makefile.common
 E2ETEST_K8S_VERSION  := 1.31.6
 CERT_MANAGER_VERSION := 1.15.0
 SPEGEL_VERSION := 0.0.28
@@ -34,13 +35,18 @@ setup:
 start:
 	$(MAKE) -C ../../ docker-build
 	$(KIND) create cluster --name=$(KIND_CLUSTER_NAME) --config=$(KIND_CONFIG) --image=kindest/node:v$(E2ETEST_K8S_VERSION) --wait 1m
-	$(KIND) load docker-image image-prefetch:dev --name=$(KIND_CLUSTER_NAME)
+	$(MAKE) kind-load
 	$(KUBECTL) apply -f https://github.com/jetstack/cert-manager/releases/download/v$(CERT_MANAGER_VERSION)/cert-manager.yaml
 	$(KUBECTL) -n cert-manager wait --for=condition=available --timeout=180s --all deployments
 	$(KUBECTL) apply -k ../../config/default
 	$(KUBECTL) -n ofen-system wait --for=condition=available --timeout=180s --all deployments
 	helm upgrade --create-namespace --namespace spegel --install --version v$(SPEGEL_VERSION) \
 		spegel oci://ghcr.io/spegel-org/helm-charts/spegel --wait
+
+.PHONY: kind-load
+kind-load:
+	$(KIND) load docker-image $(IMG_PREFETCH_CONTROLLER) --name ${KIND_CLUSTER_NAME}
+	$(KIND) load docker-image $(IMG_NODEIMAGESET_CONTROLLER) --name ${KIND_CLUSTER_NAME}
 
 .PHONY: test
 test:

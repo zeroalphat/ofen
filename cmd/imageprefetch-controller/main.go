@@ -30,9 +30,12 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
 	utilruntime.Must(ofenv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
+}
+
+type Config struct {
+	imagePullNodeLimit int
 }
 
 func main() {
@@ -41,8 +44,8 @@ func main() {
 	var probeAddr string
 	var secureMetrics bool
 	var enableHTTP2 bool
-	var imagePullNodeLimit int
 	var tlsOpts []func(*tls.Config)
+	var config Config
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -53,7 +56,7 @@ func main() {
 		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
-	flag.IntVar(&imagePullNodeLimit, "image-pull-node-limit", 1,
+	flag.IntVar(&config.imagePullNodeLimit, "image-pull-node-limit", 1,
 		"The maximum number of nodes that can pull images concurrently.")
 	opts := zap.Options{
 		Development: true,
@@ -133,18 +136,12 @@ func main() {
 	if err = (&controller.ImagePrefetchReconciler{
 		Client:             mgr.GetClient(),
 		Scheme:             mgr.GetScheme(),
-		ImagePullNodeLimit: imagePullNodeLimit,
+		ImagePullNodeLimit: config.imagePullNodeLimit,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ImagePrefetch")
 		os.Exit(1)
 	}
-	if err = (&controller.NodeImageSetReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "NodeImageSet")
-		os.Exit(1)
-	}
+
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = webhookofenv1.SetupImagePrefetchWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "ImagePrefetch")
@@ -162,9 +159,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting manager")
+	setupLog.Info("starting imageprefetch controller")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+		setupLog.Error(err, "problem running imageprefetch controller")
 		os.Exit(1)
 	}
 }
