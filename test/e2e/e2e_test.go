@@ -63,11 +63,11 @@ var _ = Describe("controller", Ordered, func() {
 		It("should run successfully", func() {
 			var controllerPodName string
 
-			By("validating that the controller-manager pod is running as expected")
+			By("validating that the imageprefetch-controller pod is running as expected")
 			verifyControllerUp := func() error {
 				// Get pod name
 				stdout, stderr, err := kubectl("get", "-n", namespace,
-					"pods", "-l", "control-plane=controller-manager",
+					"pods", "-l", "control-plane=imageprefetch-controller",
 					"-o", "go-template={{ range .items }}"+
 						"{{ if not .metadata.deletionTimestamp }}"+
 						"{{ .metadata.name }}"+
@@ -80,7 +80,7 @@ var _ = Describe("controller", Ordered, func() {
 					return fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
 				}
 				controllerPodName = podNames[0]
-				ExpectWithOffset(2, controllerPodName).Should(ContainSubstring("controller-manager"))
+				ExpectWithOffset(2, controllerPodName).Should(ContainSubstring("imageprefetch-controller"))
 
 				// Validate pod status
 				stdout, stderr, err = kubectl("get",
