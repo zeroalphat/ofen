@@ -22,7 +22,14 @@ help: ## Display this help.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	rm -rf charts/ofen/templates/generated/
+	mkdir -p charts/ofen/templates/generated/crds
 	$(CONTROLLER_GEN) rbac:roleName=imageprefetch-controller-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(KUSTOMIZE) build config/crd -o config/crd/tests
+	$(KUSTOMIZE) build config/kustomize-to-helm/overlays/templates | yq e "." - > charts/ofen/templates/generated/generated.yaml
+	echo '{{- if .Values.crds.enabled }}' > charts/ofen/templates/generated/crds/ofen_crds.yaml
+	$(KUSTOMIZE) build config/kustomize-to-helm/overlays/crds | yq e "." - >> charts/ofen/templates/generated/crds/ofen_crds.yaml
+	echo '{{- end }}' >> charts/moco/templates/generated/crds/moco_crds.yaml
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
