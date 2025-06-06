@@ -6,6 +6,8 @@ on:
 
 jobs:
   helm-release:
+    permissions:
+      contents: write
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
