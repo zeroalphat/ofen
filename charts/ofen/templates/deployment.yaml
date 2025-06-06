@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ofen.fullname" . }}-controller
+  labels:
+    {{- include "ofen.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.controller.replicas }}
+  selector:
+    matchLabels:
+      control-plane: imageprefetch-controller
+  template:
+    metadata:
+      labels:
+        control-plane: imageprefetch-controller
+        app.kubernetes.io/name: {{ include "ofen.name" . }}
+    spec:
+      containers:
+      - name: manager
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+        {{- with .Values.image.pullPolicy }}
+        imagePullPolicy: {{ .}}
+        {{- end }}
+        args:
+          - --leader-elect
+          - --health-probe-bind-address=:8081
+        {{- with  .Values.controller.extraArgs }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        ports:
+          - name: health
+            containerPort: 8081
+            protocol: TCP
+          - name: metrics
+            containerPort: 8080
+            protocol: TCP
+          - name: webhook
+            containerPort: 9443
+            protocol: TCP
+        {{- with .Values.controller.resources}}
+        resources: {{ toYaml . | nindent 10 }}
+        {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: health
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: health
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+          - name: webhook-cert
+            mountPath: /tmp/k8s-webhook-server/serving-certs
+            readOnly: true
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: ofen-imageprefetch-controller
+      terminationGracePeriodSeconds: {{ .Values.controller.terminationGracePeriodSeconds }}
+      volumes:
+        - name: webhook-cert
+          secret:
+            defaultMode: 420
+            secretName: ofen-controller-cert

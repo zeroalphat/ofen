@@ -1,0 +1,386 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-imageprefetch-controller
+  namespace: '{{ .Release.Namespace }}'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-leader-election-role
+  namespace: '{{ .Release.Namespace }}'
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-imageprefetch-controller-role
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ofen.cybozu.io
+    resources:
+      - imageprefetches
+      - nodeimagesets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ofen.cybozu.io
+    resources:
+      - imageprefetches/finalizers
+      - nodeimagesets/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - ofen.cybozu.io
+    resources:
+      - imageprefetches/status
+      - nodeimagesets/status
+    verbs:
+      - get
+      - patch
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-imageprefetch-editor-role
+rules:
+  - apiGroups:
+      - ofen.cybozu.io
+    resources:
+      - imageprefetches
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ofen.cybozu.io
+    resources:
+      - imageprefetches/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-imageprefetch-viewer-role
+rules:
+  - apiGroups:
+      - ofen.cybozu.io
+    resources:
+      - imageprefetches
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ofen.cybozu.io
+    resources:
+      - imageprefetches/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-metrics-auth-role
+rules:
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - subjectaccessreviews
+    verbs:
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-metrics-reader
+rules:
+  - nonResourceURLs:
+      - /metrics
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-nodeimageset-editor-role
+rules:
+  - apiGroups:
+      - ofen.cybozu.io
+    resources:
+      - nodeimagesets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ofen.cybozu.io
+    resources:
+      - nodeimagesets/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-nodeimageset-viewer-role
+rules:
+  - apiGroups:
+      - ofen.cybozu.io
+    resources:
+      - nodeimagesets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ofen.cybozu.io
+    resources:
+      - nodeimagesets/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-leader-election-rolebinding
+  namespace: '{{ .Release.Namespace }}'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ofen-leader-election-role
+subjects:
+  - kind: ServiceAccount
+    name: ofen-imageprefetch-controller
+    namespace: '{{ .Release.Namespace }}'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-imageprefetch-controller-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ofen-imageprefetch-controller-role
+subjects:
+  - kind: ServiceAccount
+    name: ofen-imageprefetch-controller
+    namespace: '{{ .Release.Namespace }}'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-metrics-auth-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ofen-metrics-auth-role
+subjects:
+  - kind: ServiceAccount
+    name: ofen-imageprefetch-controller
+    namespace: '{{ .Release.Namespace }}'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-webhook-service
+  namespace: '{{ .Release.Namespace }}'
+spec:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 9443
+  selector:
+    control-plane: imageprefetch-controller
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/ofen-serving-cert'
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-mutating-webhook-configuration
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: ofen-webhook-service
+        namespace: '{{ .Release.Namespace }}'
+        path: /mutate-ofen-cybozu-io-v1-imageprefetch
+    failurePolicy: Fail
+    name: mimageprefetch.kb.io
+    rules:
+      - apiGroups:
+          - ofen.cybozu.io
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - imageprefetches
+    sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/ofen-serving-cert'
+  labels:
+    app.kubernetes.io/managed-by: '{{ .Release.Service }}'
+    app.kubernetes.io/name: '{{ include "ofen.name" . }}'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    helm.sh/chart: '{{ include "ofen.chart" . }}'
+  name: ofen-validating-webhook-configuration
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: ofen-webhook-service
+        namespace: '{{ .Release.Namespace }}'
+        path: /validate-ofen-cybozu-io-v1-imageprefetch
+    failurePolicy: Fail
+    name: vimageprefetch.kb.io
+    rules:
+      - apiGroups:
+          - ofen.cybozu.io
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - imageprefetches
+    sideEffects: None

@@ -32,7 +32,7 @@ setup:
 	GOBIN=$(BIN_DIR) go install sigs.k8s.io/kind@v$(KIND_VERSION)
 
 .PHONY: start
-start:
+start: setup
 	$(MAKE) -C ../../ docker-build
 	$(KIND) create cluster --name=$(KIND_CLUSTER_NAME) --config=$(KIND_CONFIG) --image=kindest/node:v$(E2ETEST_K8S_VERSION) --wait 1m
 	$(MAKE) kind-load
@@ -44,7 +44,7 @@ start:
 		spegel oci://ghcr.io/spegel-org/helm-charts/spegel --wait
 
 .PHONY: kind-load
-kind-load:
+kind-load: setup
 	$(KIND) load docker-image $(IMG_PREFETCH_CONTROLLER) --name ${KIND_CLUSTER_NAME}
 	$(KIND) load docker-image $(IMG_NODEIMAGESET_CONTROLLER) --name ${KIND_CLUSTER_NAME}
 
@@ -58,6 +58,6 @@ logs:
 	$(KIND) export logs --name=$(KIND_CLUSTER_NAME) ./logs
 
 .PHONY: stop
-stop:
+stop: setup
 	$(KIND) delete cluster --name=$(KIND_CLUSTER_NAME)
 	-docker image rm image-prefetch:dev

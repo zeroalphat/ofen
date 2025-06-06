@@ -1,0 +1,25 @@
+crds:
+  # installCRDs determines whether to install the Custom Resource Definitions (CRDs) for the operator.
+  enabled: true
+
+image:
+  # image.repository is the name of the image to use for the container.
+  repository: imageprefetch-controller
+  # image.tag is the tag of the image to use for the container.
+  tag: dev
+  # image.pullPolicy is the image pull policy for the container.
+  pullPolicy: Never
+
+controller:
+  # container.replicas is the number of replicas for the controller deployment.
+  replicas: 2
+  # resources defines the resource requests and limits for the controller container.
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+  # terminationGracePeriodSeconds is the time in seconds to wait before forcefully terminating the controller pod.
+  terminationGracePeriodSeconds: 30
+  # extraArgs are additional command line arguments to pass to the controller manager.
+  extraArgs: []
+  

@@ -1,0 +1,3 @@
+owner: zeroalphat
+git-repo: ofen
+release-name-template: "{{ .Name }}-chart-v{{ .Version }}"
