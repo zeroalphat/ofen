@@ -21,15 +21,15 @@ help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 .PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+manifests: controller-gen kustomize  ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	rm -rf charts/ofen/templates/generated/
 	mkdir -p charts/ofen/templates/generated/crds
 	$(CONTROLLER_GEN) rbac:roleName=imageprefetch-controller-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 	$(KUSTOMIZE) build config/crd -o config/crd/tests
-	$(KUSTOMIZE) build config/kustomize-to-helm/overlays/templates | yq e "." - > charts/ofen/templates/generated/generated.yaml
+	$(KUSTOMIZE) build config/kustomize-to-helm/overlays/templates | $(YQ) e "." - > charts/ofen/templates/generated/generated.yaml
 	echo '{{- if .Values.crds.enabled }}' > charts/ofen/templates/generated/crds/ofen_crds.yaml
-	$(KUSTOMIZE) build config/kustomize-to-helm/overlays/crds | yq e "." - >> charts/ofen/templates/generated/crds/ofen_crds.yaml
-	echo '{{- end }}' >> charts/moco/templates/generated/crds/moco_crds.yaml
+	$(KUSTOMIZE) build config/kustomize-to-helm/overlays/crds | $(YQ) e "." - >> charts/ofen/templates/generated/crds/ofen_crds.yaml
+	echo '{{- end }}' >> charts/ofen/templates/generated/crds/ofen_crds.yaml
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -138,6 +138,7 @@ GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
 GINKGO = $(LOCALBIN)/ginkgo
 APPLYCONFIGURATION_GEN = $(LOCALBIN)/applyconfiguration-gen
 MODELS_SCHEMA = $(LOCALBIN)/models-schema
+YQ := $(LOCALBIN)/yq
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.6.0
@@ -147,6 +148,7 @@ GOLANGCI_LINT_VERSION ?= v2.1.6
 GINKGO_VERSION ?= v2.23.4
 CODE_GENERATOR_VERSION ?= v0.31.1
 MODELS_SCHEMA_VERSION ?= v1.31.1
+YQ_VERSION ?= v4.45.4
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
@@ -182,6 +184,12 @@ models-schema: $(LOCALBIN) ## Download models-schema locally if necessary.
 		cd /tmp/work-models-schema/pkg/generated/openapi/cmd/models-schema &&\
 		GOBIN=$(LOCALBIN) go install \
 	)
+
+.PHONY: yq
+yq: $(YQ) ## Download yq locally if necessary.
+$(YQ): $(LOCALBIN)
+	wget -qO $@ https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64
+	chmod +x $@
 
 .PHONY: applyconfiguration-gen
 applyconfiguration-gen: $(APPLYCONFIGURATION_GEN) ## Download applyconfiguration-gen locally if necessary.
