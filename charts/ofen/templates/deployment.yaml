@@ -13,6 +13,7 @@ spec:
     metadata:
       labels:
         control-plane: imageprefetch-controller
+        app.kubernetes.io/name: {{ include "ofen.name" . }}
     spec:
       containers:
       - name: manager
@@ -32,6 +33,9 @@ spec:
             protocol: TCP
           - name: metrics
             containerPort: 8080
+            protocol: TCP
+          - name: webhook
+            containerPort: 9443
             protocol: TCP
         {{- with .Values.controller.resources}}
         resources: {{ toYaml . | nindent 10 }}
