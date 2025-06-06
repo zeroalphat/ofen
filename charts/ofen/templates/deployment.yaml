@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "ofen.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.container.replicas }}
+  replicas: {{ .Values.controller.replicas }}
   selector:
     matchLabels:
       control-plane: imageprefetch-controller
@@ -34,7 +34,7 @@ spec:
             containerPort: 8080
             protocol: TCP
         {{- with .Values.controller.resources}}
-        resources: {{ toYaml . | nindent 8 }}
+        resources: {{ toYaml . | nindent 10 }}
         {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
@@ -53,7 +53,16 @@ spec:
             port: health
           initialDelaySeconds: 5
           periodSeconds: 10
+        volumeMounts:
+          - name: webhook-cert
+            mountPath: /tmp/k8s-webhook-server/serving-certs
+            readOnly: true
       securityContext:
         runAsNonRoot: true
-      serviceAccountName: imageprefetch-controller
+      serviceAccountName: ofen-imageprefetch-controller
       terminationGracePeriodSeconds: {{ .Values.controller.terminationGracePeriodSeconds }}
+      volumes:
+        - name: webhook-cert
+          secret:
+            defaultMode: 420
+            secretName: ofen-controller-cert

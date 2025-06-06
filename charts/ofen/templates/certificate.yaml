@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ofen-serving-cert
+  namespace: {{ .Release.Namespace }}
+spec:
+  dnsNames:
+    - ofen-webhook-service.{{ .Release.Namespace }}.svc
+    - ofen-webhook-service.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: ofen-selfsigned-issuer
+  secretName: ofen-controller-cert

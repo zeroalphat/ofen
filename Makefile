@@ -21,7 +21,7 @@ help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 .PHONY: manifests
-manifests: controller-gen kustomize  ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+manifests: controller-gen kustomize yq ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	rm -rf charts/ofen/templates/generated/
 	mkdir -p charts/ofen/templates/generated/crds
 	$(CONTROLLER_GEN) rbac:roleName=imageprefetch-controller-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
